@@ -1,0 +1,22 @@
+version: '3'
+
+tasks:
+
+  build:
+    cmds:
+      - docker-compose -f deployment/docker-compose.local.yaml build
+  up:
+    cmds:
+      - docker-compose -f deployment/docker-compose.local.yaml up -d
+  down:
+    cmds:
+      - docker-compose -f deployment/docker-compose.local.yaml down
+  test:
+    cmds:
+      - go test -cover -race -v ./...  
+  tidy:
+    cmds:
+      - go mod tidy
+
+
+      

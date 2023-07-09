@@ -1,0 +1,38 @@
+#  1/2 -- stage build
+
+FROM golang:alpine AS builder
+
+ENV GO111MODULE=on \
+    CGO_ENABLED=0 \
+    GOOS=linux \
+    GOARCH=amd64 \
+    GOPROXY="https://proxy.golang.org,direct"
+
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
+WORKDIR /build
+
+COPY go.mod .
+COPY go.sum .
+
+RUN go mod download
+
+COPY . .
+
+# RUN go test ./... -v
+
+RUN swag init -g cmd/main.go --output internal/docs
+
+RUN go build -o main cmd/main.go
+
+# 2/2 -- stage dist
+
+FROM scratch
+
+WORKDIR /dist
+
+COPY --from=builder /build/main /dist/main
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+# COPY --from=builder /build/doc /dist/doc
+
+CMD ["/dist/main"]

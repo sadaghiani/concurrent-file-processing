@@ -1,0 +1,58 @@
+version: "3.8"
+
+services:
+
+  concurrent-file-processing:
+    build:
+      context: ..
+      dockerfile: ./deployment/Dockerfile-local
+    image: sadaghiani/concurrent-file-processing:latest
+    environment:
+      APP_LOG_LEVEL: "-1"
+      APP_BATCH_SIZE: "100"
+      APP_NUMBER_WORKERS: "10"
+      DATABASE_URI: "mongo"
+      DATABASE_PORT: "27017"
+      DATABASE_NAME: "concurrent-file-processing"
+      DATABASE_COLLECTION: "core"
+      DATABASE_USER: "root"
+      DATABASE_PASSWORD: "12345678"
+    ports:
+      - 8080:80
+    restart: on-failure:5
+    depends_on:
+      mongo:
+        condition : service_healthy
+    networks:
+      - internal
+
+  mongo:
+    image: mongo:4.2.24
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: "root"
+      MONGO_INITDB_ROOT_PASSWORD: "12345678"
+    networks:
+      - internal
+    healthcheck:
+      test:  mongo --eval 'db.runCommand("ping").ok' localhost:27017/test --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 10s
+    ports:
+      - 27017:27017
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: "root"
+      ME_CONFIG_MONGODB_ADMINPASSWORD: "12345678"
+      ME_CONFIG_MONGODB_URL: mongodb://root:12345678@mongo:27017/
+    networks:
+      - internal
+
+networks:
+  internal:
